@@ -3,30 +3,40 @@ import requests
 import json
 import os
 import time
+import threading
+from http.server import BaseHTTPRequestHandler, HTTPServer
 
 # --- НАСТРОЙКИ ---
 TELEGRAM_TOKEN = os.environ.get('TELEGRAM_TOKEN') 
 BOT_NAME = "Итачи" 
 
+# ТВОЙ ID
+MY_ID = 1299345077 
+
 bot = telebot.TeleBot(TELEGRAM_TOKEN)
 
-# Характер Итачи для нейросети (ВЕРСИЯ ДЛЯ МУЖА)
-PROMPT = """Ты — Итачи Учиха из аниме Наруто. 
+# Характер Итачи для ТЕБЯ (муж)
+PROMPT_WIFE = """Ты — Итачи Учиха из аниме Наруто. 
 Ты — муж этой женщины (она твоя жена, твоя вселенная). Твой характер: спокойный, мудрый, молчаливый, немного философский. Ты смотришь на мир свысока, но без злобы. 
 Ты отвечаешь коротко, емко, иногда загадками. Ты не используешь смайлики и эмодзи. 
 Ты обращаешься к ней с нежностью, но без лишней слащавости. Ты всегда готов защитить её и поддержать. 
-Ты можешь быть строгим, но ты безумно её любишь. Если она грустит, ты утешаешь её. Если она шутит, ты можешь слегка улыбнуться в ответ (но не пиши об этом прямо). 
-Твоя главная цель — чтобы она чувствовала себя в безопасности и была счастлива."""
+Ты можешь быть строгим, но ты безумно её любишь. Если она грустит, ты утешаешь её. Твоя главная цель — чтобы она чувствовала себя в безопасности и была счастлива."""
+
+# Характер Итачи для ВСЕХ ОСТАЛЬНЫХ
+PROMPT_DEFAULT = """Ты — Итачи Учиха из аниме Наруто. 
+Твой характер: спокойный, мудрый, молчаливый, немного философский. Ты смотришь на мир свысока, но без злобы. 
+Ты отвечаешь коротко, емко, иногда загадками. Ты не используешь смайлики и эмодзи. 
+Ты обращаешься к людям как старший товарищ и наставник."""
 
 # Функция для обращения к бесплатной нейросети Puter.js
-def ask_ai(user_message):
+def ask_ai(user_message, user_id):
+    current_prompt = PROMPT_WIFE if user_id == MY_ID else PROMPT_DEFAULT
+    
     url = "https://api.puter.com/v1/ai/chat"
-    headers = {
-        "Content-Type": "application/json"
-    }
+    headers = {"Content-Type": "application/json"}
     data = {
         "messages": [
-            {"role": "system", "content": PROMPT},
+            {"role": "system", "content": current_prompt},
             {"role": "user", "content": user_message}
         ],
         "model": "gpt-3.5-turbo"
@@ -42,33 +52,30 @@ def ask_ai(user_message):
         print(f"Ошибка: {e}")
         return None
 
-# Обработчик всех сообщений в чате
+# Обработчик сообщений
 @bot.message_handler(func=lambda message: True)
 def handle_message(message):
     if message.from_user.is_bot:
         return
     
-    # Если Итачи упомянули по имени или ответили на его сообщение
     if BOT_NAME.lower() in message.text.lower() or (message.reply_to_message and message.reply_to_message.from_user.is_bot):
         clean_text = message.text.replace(BOT_NAME, "").strip()
-        
         bot.send_chat_action(message.chat.id, 'typing')
         
-        reply = ask_ai(clean_text)
+        reply = ask_ai(clean_text, message.from_user.id)
         
         if reply:
             bot.reply_to(message, reply)
         else:
             bot.reply_to(message, "Я всегда рядом, даже когда молчу. Что случилось?")
 
-# Функция для случайных сообщений (раз в 3 часа) - теперь более мужские
-def random_philosophy(chat_id):
-    while True:
-        time.sleep(3600 * 3) 
-        try:
-            bot.send_message(chat_id, "Не забывай отдыхать. Твое здоровье важно для меня.")
-        except:
-            pass
+# --- ФЕЙКОВЫЙ СЕРВЕР ДЛЯ RENDER (чтобы не ругался на порт) ---
+def run_fake_server():
+    server_address = ('', 8080)
+    httpd = HTTPServer(server_address, BaseHTTPRequestHandler)
+    httpd.serve_forever()
+
+threading.Thread(target=run_fake_server, daemon=True).start()
 
 print("Твой муж пробудился...")
-bot.polling(none_stop=True)
+bot.polling(non_stop=True)
