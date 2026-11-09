@@ -9,6 +9,7 @@ GROQ_API_KEY = "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"
 
 bot = telebot.TeleBot(TELEGRAM_TOKEN)
 
+# Твои данные
 MY_ID = 1299345077
 MY_NAME = "Наташа"
 
@@ -30,10 +31,18 @@ def handle_message(message):
             "Content-Type": "application/json"
         }
         
+        # ТУТ МАГИЯ: Мы проверяем, кто пишет
+        if message.from_user.id == MY_ID:
+            # Если пишешь ты (жена)
+            prompt = f"Ты Итачи Учиха. Ты муж Наташи. Отвечай кратко (1-2 предложения), спокойно, с теплотой. Обращайся к ней по имени или 'любимая'. Без смайликов."
+        else:
+            # Если пишет кто-то другой
+            prompt = f"Ты Итачи Учиха из аниме Наруто. Отвечай кратко (1-2 предложения), спокойно, немного отстраненно и мудро. Не используй смайлики."
+            
         data = {
             "model": "openai/gpt-oss-120b",
             "messages": [
-                {"role": "system", "content": f"Ты персонаж Итачи Учиха. Отвечай кратко, спокойно, мудро. Обращайся к Наташе. Без смайликов и без стихов."},
+                {"role": "system", "content": prompt},
                 {"role": "user", "content": text}
             ],
             "max_tokens": 150
