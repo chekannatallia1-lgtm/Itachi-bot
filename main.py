@@ -7,12 +7,8 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 # Твой токен
 TELEGRAM_TOKEN = "8993062067:AAGULvEE4RwbwgYNcf4Xn1qN5Iaj_9MTw_4"
 
-# Твой ключ OpenRouter (разбит на части)
-K1 = "sk-orca-jm0Spe"
-K2 = "P4wA0lSA9mOnW"
-K3 = "GAR1h7yzzAnTIV"
-K4 = "FPs2fFlPv3"
-OPENROUTER_API_KEY = K1 + K2 + K3 + K4
+# Твой ключ OpenRouter (одной строкой)
+OPENROUTER_API_KEY = "sk-orca-jm0SpeP4wA0lSA9mOnWGAR1h7yzzAnTIVFPs2fFlPv3"
 
 bot = telebot.TeleBot(TELEGRAM_TOKEN)
 
@@ -35,12 +31,12 @@ def handle_message(message):
         headers = {
             "Authorization": f"Bearer {OPENROUTER_API_KEY}",
             "Content-Type": "application/json",
-            "HTTP-Referer": "https://t.me", # Обязательно для OpenRouter
+            "HTTP-Referer": "https://t.me",
             "X-Title": "Itachi Bot"
         }
         
         data = {
-            "model": "meta-llama/llama-3.1-8b-instruct:free", # Бесплатная модель
+            "model": "meta-llama/llama-3.1-8b-instruct:free",
             "messages": [
                 {"role": "system", "content": f"Ты Итачи Учиха. Ты муж Наташи. Отвечай коротко (1-2 предложения), сдержанно, без смайликов и без поэзии. Ты любишь её. Не повторяй одну и ту же фразу про защиту, отвечай по существу."},
                 {"role": "user", "content": text}
@@ -53,8 +49,7 @@ def handle_message(message):
                 reply = res.json()['choices'][0]['message']['content']
                 bot.reply_to(message, reply)
             else:
-                # Если OpenRouter выдаст ошибку, выведем её в чат
-                bot.reply_to(message, f"Ошибка AI: {res.status_code}")
+                bot.reply_to(message, f"Ошибка AI: {res.status_code} - {res.text}")
         except Exception as e:
             bot.reply_to(message, f"Сбой: {e}")
 
