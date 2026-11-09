@@ -31,7 +31,7 @@ def handle_message(message):
         }
         
         data = {
-            "model": "llama-3.3-70b-versatile",  # <--- НОВАЯ МОДЕЛЬ
+            "model": "llama-3.1-8b-instant",  # <--- ТОЧНОЕ НАЗВАНИЕ
             "messages": [
                 {"role": "system", "content": f"Ты персонаж Итачи Учиха из Наруто. Отвечай кратко, спокойно, мудро. Обращайся к Наташе. Без смайликов и без стихов."},
                 {"role": "user", "content": text}
