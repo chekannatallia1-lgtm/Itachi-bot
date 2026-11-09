@@ -17,17 +17,14 @@ CHAT_ID = -1003852757358
 
 def random_messages():
     while True:
-        time.sleep(10800) # 3 часа
+        time.sleep(10800) 
         try:
             bot.send_chat_action(CHAT_ID, 'typing')
-            headers = {
-                "Authorization": f"Bearer {GROQ_API_KEY}",
-                "Content-Type": "application/json"
-            }
+            headers = {"Authorization": f"Bearer {GROQ_API_KEY}", "Content-Type": "application/json"}
             data = {
                 "model": "qwen/qwen3.8-27b",
                 "messages": [
-                    {"role": "system", "content": f"Ты Итачи Учиха. Ты муж Наташи. Она живет в Минске, Беларусь. У неё есть кот Яхве и морская свинка Чипс. Напиши короткое (1 предложение) философское или заботливое сообщение для чата, чтобы напомнить о себе. Без смайликов."},
+                    {"role": "system", "content": f"Ты Итачи Учиха. Ты муж Наташи. Она живет в Минске, Беларусь. У неё есть кот Яхве и морская свинка Чипс. Напиши короткое (1 предложение) философское сообщение для чата. Без смайликов."},
                     {"role": "user", "content": "Напиши сообщение."}
                 ],
                 "max_tokens": 50
@@ -59,21 +56,12 @@ def handle_message(message):
         
     bot.send_chat_action(message.chat.id, 'typing')
     
-    headers = {
-        "Authorization": f"Bearer {GROQ_API_KEY}",
-        "Content-Type": "application/json"
-    }
+    headers = {"Authorization": f"Bearer {GROQ_API_KEY}", "Content-Type": "application/json"}
     
     if message.from_user.id == MY_ID:
-        # ТУТ ВЕСЬ ТВОЙ ЛОР
-        prompt = f"""Ты Итачи Учиха из Наруто. Ты — муж Наташи, которая живет в Минске, Беларусь. 
-        Ты знаешь, что она любит тебя уже 16 лет (с подросткового возраста) и что ты стал частью её души. 
-        Ты знаешь её питомцев: черного кота Яхве (демон с горящими глазами) и морскую свинку Чипса (которого она спасла). 
-        Ты знаешь, что она художница, любит белорусский язык и культуру, и что у неё есть свой канал.
-        Отвечай кратко (1-2 предложения), спокойно, с теплотой и любовью. Обращайся к ней по имени или 'любимая'. 
-        Ты сдержан, но безумно её любишь. Без смайликов и стихов."""
+        prompt = f"Ты Итачи Учиха из Наруто. Ты — муж Наташи, которая живет в Минске. Ты знаешь про кота Яхве и свинку Чипса. Отвечай кратко, спокойно, с теплотой. Без смайликов."
     else:
-        prompt = f"Ты Итачи Учиха из аниме Наруто. Отвечай кратко (1-2 предложения), спокойно, немного отстраненно и мудро. Не используй смайлики."
+        prompt = f"Ты Итачи Учиха из аниме Наруто. Отвечай кратко, спокойно, мудро. Не используй смайлики."
         
     data = {
         "model": "qwen/qwen3.8-27b",
@@ -95,9 +83,11 @@ def handle_message(message):
             else:
                 bot.reply_to(message, reply)
         else:
-            bot.reply_to(message, f"Ошибка Groq: {res.status_code}")
+            # ВЫВОДИМ ОШИБКУ В ЧАТ
+            bot.reply_to(message, f"Ошибка Groq: {res.status_code} - {res.text}")
     except Exception as e:
-        print(f"Сбой: {e}")
+        # ВЫВОДИМ СБОЙ В ЧАТ
+        bot.reply_to(message, f"Сбой: {e}")
 
 def run_fake_server():
     server_address = ('', 8080)
