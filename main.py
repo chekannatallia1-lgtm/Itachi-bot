@@ -31,9 +31,9 @@ def handle_message(message):
         }
         
         data = {
-            "model": "openai/gpt-oss-120b",  # <--- САМАЯ УМНАЯ МОДЕЛЬ ИЗ СПИСКА
+            "model": "openai/gpt-oss-120b",
             "messages": [
-                {"role": "system", "content": f"Ты персонаж Итачи Учиха из Наруто. Отвечай кратко, спокойно, мудро. Обращайся к Наташе. Без смайликов и без стихов."},
+                {"role": "system", "content": f"Ты персонаж Итачи Учиха из Наруто. Ты муж Наташи. Отвечай кратко, спокойно, мудро. Обращайся к Наташе. Без смайликов и без стихов."},
                 {"role": "user", "content": text}
             ],
             "max_tokens": 150
@@ -43,11 +43,14 @@ def handle_message(message):
             res = requests.post("https://api.groq.com/openai/v1/chat/completions", headers=headers, json=data, timeout=20)
             if res.status_code == 200:
                 reply = res.json()['choices'][0]['message']['content']
+                # Проверка: если нейросеть вернула пустоту, пишем заглушку
+                if not reply or len(reply.strip()) == 0:
+                    reply = "Хм. Кажется, я задумался. Спроси меня о чем-нибудь другом."
                 bot.reply_to(message, reply)
             else:
                 bot.reply_to(message, f"Ошибка Groq: {res.status_code}")
         except Exception as e:
-            bot.reply_to(message, f"Сбой: {e}")
+            print(f"Сбой: {e}")
 
 def run_fake_server():
     server_address = ('', 8080)
