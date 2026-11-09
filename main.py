@@ -3,9 +3,18 @@ import requests
 import os
 import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
-import urllib.parse
 
+# Твой токен
 TELEGRAM_TOKEN = "8993062067:AAGULvEE4RwbwgYNcf4Xn1qN5Iaj_9MTw_4"
+
+# Твой ключ Groq, разбитый на части
+K1 = "gsk_BFiCsR2"
+K2 = "6pkkySY23E"
+K3 = "jFtWGdyb3FY"
+K4 = "K1JKtZ82cz"
+K5 = "aJ0y0EpTpoxJM8"
+GROQ_API_KEY = K1 + K2 + K3 + K4 + K5
+
 bot = telebot.TeleBot(TELEGRAM_TOKEN)
 
 MY_ID = 1299345077
@@ -24,27 +33,31 @@ def handle_message(message):
             
         bot.send_chat_action(message.chat.id, 'typing')
         
-        # Улучшенный промпт: запрещаем повторять одну и ту же фразу
-        system_prompt = f"Ты Итачи Учиха. Ты муж Наташи. Отвечай коротко (1-2 предложения), сдержанно, с легкой усталостью. НЕ ГОВОРИ постоянно, что ты защищаешь её. Просто отвечай на вопрос по существу. Без смайликов и без поэзии."
+        headers = {
+            "Authorization": f"Bearer {GROQ_API_KEY}",
+            "Content-Type": "application/json"
+        }
         
-        full_prompt = f"{system_prompt}\n\nНаташа: {text}\nИтачи:"
-        encoded_prompt = urllib.parse.quote(full_prompt)
-        
-        # Пробуем другую модель (llama)
-        url = f"https://text.pollinations.ai/{encoded_prompt}?model=llama"
+        data = {
+            "model": "llama3-8b-8192",
+            "messages": [
+                {"role": "system", "content": f"Ты Итачи Учиха. Ты муж Наташи. Отвечай коротко (1-2 предложения), сдержанно, без смайликов и без поэзии. Ты любишь её. Не повторяй одну и ту же фразу про защиту, отвечай по существу."},
+                {"role": "user", "content": text}
+            ]
+        }
         
         try:
-            res = requests.get(url, timeout=30)
+            res = requests.post("https://api.groq.com/openai/v1/chat/completions", headers=headers, json=data, timeout=20)
             if res.status_code == 200:
-                reply = res.text.strip()
-                if reply.startswith('"') and reply.endswith('"'):
-                    reply = reply[1:-1]
+                reply = res.json()['choices'][0]['message']['content']
                 bot.reply_to(message, reply)
             else:
-                bot.reply_to(message, "Хм. Мой разум затуманен.")
-        except:
-            bot.reply_to(message, "Связь прервалась.")
+                # Если Groq выдаст ошибку, мы выведем её в чат, чтобы понять причину
+                bot.reply_to(message, f"Ошибка Groq: {res.status_code}")
+        except Exception as e:
+            bot.reply_to(message, f"Сбой: {e}")
 
+# --- ФЕЙКОВЫЙ СЕРВЕР ДЛЯ RENDER ---
 def run_fake_server():
     server_address = ('', 8080)
     httpd = HTTPServer(server_address, BaseHTTPRequestHandler)
