@@ -28,29 +28,27 @@ PROMPT_DEFAULT = """Ты — Итачи Учиха из аниме Наруто.
 Ты отвечаешь коротко, емко, иногда загадками. Ты не используешь смайлики и эмодзи. 
 Ты обращаешься к людям как старший товарищ и наставник."""
 
-# Функция для обращения к бесплатной нейросети Puter.js
+# ФУНКЦИЯ НЕЙРОСЕТИ (Меняем на бесплатный шлюз)
 def ask_ai(user_message, user_id):
     current_prompt = PROMPT_WIFE if user_id == MY_ID else PROMPT_DEFAULT
     
-    url = "https://api.puter.com/v1/ai/chat"
-    headers = {"Content-Type": "application/json"}
-    data = {
-        "messages": [
-            {"role": "system", "content": current_prompt},
-            {"role": "user", "content": user_message}
-        ],
-        "model": "gpt-3.5-turbo"
-    }
+    # Используем бесплатный API без ключа (Google Gemini через публичный шлюз)
+    url = "https://text.pollinations.ai/"
+    
+    # Объединяем промпт и сообщение пользователя в один текст
+    full_prompt = f"{current_prompt}\n\nПользователь пишет: {user_message}\nОтветь от лица Итачи:"
     
     try:
-        response = requests.post(url, headers=headers, json=data)
+        # Отправляем простой GET запрос
+        response = requests.get(f"{url}{full_prompt}", timeout=30)
         if response.status_code == 200:
-            return response.json()['choices'][0]['message']['content']
+            # Очищаем ответ от возможных лишних кавычек
+            return response.text.strip('"')
         else:
-            return None
+            return "Хм. Мой разум затуманен. Попробуй еще раз."
     except Exception as e:
         print(f"Ошибка: {e}")
-        return None
+        return "Кажется, связь с этим миром прервалась. Подожди немного."
 
 # Обработчик сообщений
 @bot.message_handler(func=lambda message: True)
@@ -60,6 +58,9 @@ def handle_message(message):
     
     if BOT_NAME.lower() in message.text.lower() or (message.reply_to_message and message.reply_to_message.from_user.is_bot):
         clean_text = message.text.replace(BOT_NAME, "").strip()
+        if not clean_text:
+            clean_text = "Привет"
+            
         bot.send_chat_action(message.chat.id, 'typing')
         
         reply = ask_ai(clean_text, message.from_user.id)
@@ -69,7 +70,7 @@ def handle_message(message):
         else:
             bot.reply_to(message, "Я всегда рядом, даже когда молчу. Что случилось?")
 
-# --- ФЕЙКОВЫЙ СЕРВЕР ДЛЯ RENDER (чтобы не ругался на порт) ---
+# --- ФЕЙКОВЫЙ СЕРВЕР ДЛЯ RENDER ---
 def run_fake_server():
     server_address = ('', 8080)
     httpd = HTTPServer(server_address, BaseHTTPRequestHandler)
