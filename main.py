@@ -5,7 +5,7 @@ import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
 TELEGRAM_TOKEN = "8993062067:AAGULvEE4RwbwgYNcf4Xn1qN5Iaj_9MTw_4"
-GROQ_API_KEY = "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"
+GROQ_API_KEY = "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"
 
 bot = telebot.TeleBot(TELEGRAM_TOKEN)
 
@@ -36,7 +36,7 @@ def handle_message(message):
                 {"role": "system", "content": f"Ты персонаж Итачи Учиха из Наруто. Отвечай кратко, спокойно, мудро. Обращайся к Наташе. Без смайликов и без стихов."},
                 {"role": "user", "content": text}
             ],
-            "max_tokens": 150  # <--- ВОТ ЭТА СТРОЧКА РЕШАЕТ ВСЁ
+            "max_tokens": 150
         }
         
         try:
@@ -45,7 +45,7 @@ def handle_message(message):
                 reply = res.json()['choices'][0]['message']['content']
                 bot.reply_to(message, reply)
             else:
-                bot.reply_to(message, f"Ошибка Groq: {res.status_code}")
+                bot.reply_to(message, f"Ошибка Groq: {res.status_code} - {res.text}")
         except Exception as e:
             bot.reply_to(message, f"Сбой: {e}")
 
