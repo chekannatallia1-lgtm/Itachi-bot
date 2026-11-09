@@ -5,6 +5,7 @@ import threading
 import time
 import random
 from http.server import BaseHTTPRequestHandler, HTTPServer
+from datetime import datetime
 
 TELEGRAM_TOKEN = "8993062067:AAGULvEE4RwbwgYNcf4Xn1qN5Iaj_9MTw_4"
 GROQ_API_KEY = "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"
@@ -41,7 +42,12 @@ def random_messages():
 def handle_message(message):
     if message.from_user.is_bot:
         return
-    
+        
+    # ЗАЩИТА ОТ СТАРЫХ СООБЩЕНИЙ
+    # Если сообщение пришло больше 3 минут назад (пока бот спал), мы его игнорируем
+    if time.time() - message.date > 180:
+        return
+
     is_called = "итачи" in message.text.lower() or (message.reply_to_message and message.reply_to_message.from_user.is_bot)
     
     if not is_called:
@@ -59,7 +65,6 @@ def handle_message(message):
     headers = {"Authorization": f"Bearer {GROQ_API_KEY}", "Content-Type": "application/json"}
     
     if message.from_user.id == MY_ID:
-        # Идеальный промпт для мужа
         prompt = f"""Ты Итачи Учиха из Наруто. Ты муж Наташи. Наташа — девушка, твоя жена. 
         Ты знаешь, что она живет в Минске, у неё есть кот Яхве и свинка Чипс. 
         Ты знаешь, что она любит тебя уже 16 лет. 
