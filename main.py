@@ -4,10 +4,7 @@ import os
 import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
-# Твой токен
 TELEGRAM_TOKEN = "8993062067:AAGULvEE4RwbwgYNcf4Xn1qN5Iaj_9MTw_4"
-
-# Твой ключ Groq (одной строкой)
 GROQ_API_KEY = "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"
 
 bot = telebot.TeleBot(TELEGRAM_TOKEN)
@@ -34,9 +31,9 @@ def handle_message(message):
         }
         
         data = {
-            "model": "llama3-70b-8192",  # <--- ТУТ АКТУАЛЬНАЯ МОДЕЛЬ
+            "model": "llama3-70b-8192",
             "messages": [
-                {"role": "system", "content": f"Ты Итачи Учиха. Ты муж Наташи. Отвечай коротко (1-2 предложения), сдержанно, без смайликов и без поэзии. Ты любишь её. Не повторяй одну и ту же фразу про защиту, отвечай по существу."},
+                {"role": "system", "content": f"Ты персонаж Итачи Учиха из Наруто. Отвечай кратко, спокойно, мудро. Обращайся к Наташе. Без смайликов и без стихов."},
                 {"role": "user", "content": text}
             ]
         }
@@ -51,7 +48,6 @@ def handle_message(message):
         except Exception as e:
             bot.reply_to(message, f"Сбой: {e}")
 
-# --- ФЕЙКОВЫЙ СЕРВЕР ДЛЯ RENDER ---
 def run_fake_server():
     server_address = ('', 8080)
     httpd = HTTPServer(server_address, BaseHTTPRequestHandler)
