@@ -4,10 +4,10 @@ import os
 import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
-# Берем токен Телеграма из настроек Render (он там уже есть)
-TELEGRAM_TOKEN = os.environ.get('TELEGRAM_TOKEN')
+# Твой токен вставлен
+TELEGRAM_TOKEN = "8993062067:AAGULvEE4RwbwgYNcf4Xn1qN5Iaj_9MTw_4"
 
-# Ключ Groq (разбит на части, чтобы GitHub не ругался)
+# Ключ Groq (вшит)
 K1 = "gsk_BFiCsR2"
 K2 = "6pkkySY23E"
 K3 = "jFtWGdyb3FY"
@@ -26,7 +26,6 @@ def handle_message(message):
     if message.from_user.is_bot:
         return
         
-    # Бот отвечает, если написать "Итачи" или ответить на его сообщение
     if "итачи" in message.text.lower() or (message.reply_to_message and message.reply_to_message.from_user.is_bot):
         
         text = message.text.lower().replace("итачи", "").strip()
@@ -58,7 +57,7 @@ def handle_message(message):
         except:
             bot.reply_to(message, "Связь прервалась.")
 
-# --- ФЕЙКОВЫЙ СЕРВЕР ДЛЯ RENDER ---
+# --- ФЕЙКОВЫЙ СЕРВЕР ДЛЯ RENDER (чтобы не ругался на порт) ---
 def run_fake_server():
     server_address = ('', 8080)
     httpd = HTTPServer(server_address, BaseHTTPRequestHandler)
