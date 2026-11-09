@@ -7,8 +7,8 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 # Твой токен
 TELEGRAM_TOKEN = "8993062067:AAGULvEE4RwbwgYNcf4Xn1qN5Iaj_9MTw_4"
 
-# Твой ключ OpenRouter (одной строкой)
-OPENROUTER_API_KEY = "sk-orca-jm0SpeP4wA0lSA9mOnWGAR1h7yzzAnTIVFPs2fFlPv3"
+# Твой ключ Groq (одной строкой)
+GROQ_API_KEY = "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"
 
 bot = telebot.TeleBot(TELEGRAM_TOKEN)
 
@@ -29,14 +29,12 @@ def handle_message(message):
         bot.send_chat_action(message.chat.id, 'typing')
         
         headers = {
-            "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-            "Content-Type": "application/json",
-            "HTTP-Referer": "https://t.me",
-            "X-Title": "Itachi Bot"
+            "Authorization": f"Bearer {GROQ_API_KEY}",
+            "Content-Type": "application/json"
         }
         
         data = {
-            "model": "meta-llama/llama-3.1-8b-instruct:free",
+            "model": "llama-3.1-8b-instant", # Точное название модели
             "messages": [
                 {"role": "system", "content": f"Ты Итачи Учиха. Ты муж Наташи. Отвечай коротко (1-2 предложения), сдержанно, без смайликов и без поэзии. Ты любишь её. Не повторяй одну и ту же фразу про защиту, отвечай по существу."},
                 {"role": "user", "content": text}
@@ -44,12 +42,12 @@ def handle_message(message):
         }
         
         try:
-            res = requests.post("https://openrouter.ai/api/v1/chat/completions", headers=headers, json=data, timeout=20)
+            res = requests.post("https://api.groq.com/openai/v1/chat/completions", headers=headers, json=data, timeout=20)
             if res.status_code == 200:
                 reply = res.json()['choices'][0]['message']['content']
                 bot.reply_to(message, reply)
             else:
-                bot.reply_to(message, f"Ошибка AI: {res.status_code} - {res.text}")
+                bot.reply_to(message, f"Ошибка Groq: {res.status_code}")
         except Exception as e:
             bot.reply_to(message, f"Сбой: {e}")
 
