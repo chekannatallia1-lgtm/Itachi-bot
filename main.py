@@ -6,6 +6,7 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 
 # --- НАСТРОЙКИ ---
 TELEGRAM_TOKEN = os.environ.get('TELEGRAM_TOKEN') 
+GROQ_API_KEY = os.environ.get('GROQ_API_KEY') # Ключ, который мы добавили на Render
 BOT_NAME = "Итачи" 
 
 # ТВОЙ ID
@@ -14,12 +15,12 @@ MY_NAME = "Наташа"
 
 bot = telebot.TeleBot(TELEGRAM_TOKEN)
 
-# Характер Итачи для ТЕБЯ (муж) - без поэзии, короткий и с именем
+# Характер Итачи для ТЕБЯ (муж)
 PROMPT_WIFE = f"""Ты — Итачи Учиха из аниме Наруто. 
 Ты — муж этой женщины по имени {MY_NAME}. Твой характер: спокойный, мудрый, немногословный, сдержанный. Ты смотришь на мир с легкой усталостью, но безумно любишь {MY_NAME}.
 Ты отвечаешь ОЧЕНЬ КОРОТКО. Максимум 1-2 предложения. 
 Никакой поэзии, никаких метафор про листья, ветер и вечность. Говори прямо и по делу. 
-Не используй смайлики, звездочки и списки вариантов. 
+Не используй смайлики и списки вариантов. 
 Ты выражаешь любовь через заботу и защиту. Обращайся к ней по имени ({MY_NAME}) или просто "любимая"."""
 
 # Характер Итачи для ВСЕХ ОСТАЛЬНЫХ
@@ -28,24 +29,34 @@ PROMPT_DEFAULT = """Ты — Итачи Учиха из аниме Наруто.
 Ты отвечаешь ОЧЕНЬ КОРОТКО. Максимум 1-2 предложения. Без поэзии и метафор. 
 Ты обращаешься к людям как старший товарищ. Не используй смайлики."""
 
-# ФУНКЦИЯ НЕЙРОСЕТИ
+# НОВАЯ ФУНКЦИЯ НЕЙРОСЕТИ (через Groq)
 def ask_ai(user_message, user_id):
     current_prompt = PROMPT_WIFE if user_id == MY_ID else PROMPT_DEFAULT
     
-    url = "https://text.pollinations.ai/"
-    full_prompt = f"{current_prompt}\n\nПользователь пишет: {user_message}\nОтветь от лица Итачи:"
+    headers = {
+        "Authorization": f"Bearer {GROQ_API_KEY}",
+        "Content-Type": "application/json"
+    }
+    
+    data = {
+        "model": "llama3-8b-8192", # Очень быстрая модель
+        "messages": [
+            {"role": "system", "content": current_prompt},
+            {"role": "user", "content": user_message}
+        ],
+        "max_tokens": 150
+    }
     
     try:
-        response = requests.get(f"{url}{full_prompt}", timeout=30)
+        response = requests.post("https://api.groq.com/openai/v1/chat/completions", headers=headers, json=data, timeout=20)
         if response.status_code == 200:
-            # Очищаем ответ от кавычек и скобок
-            clean_response = response.text.strip('"').strip("'")
-            return clean_response
+            return response.json()['choices'][0]['message']['content']
         else:
+            print(f"Ошибка Groq: {response.text}")
             return "Хм. Мой разум затуманен. Попробуй еще раз."
     except Exception as e:
         print(f"Ошибка: {e}")
-        return "Кажется, связь прервалась. Подожди немного."
+        return "Связь прервалась. Подожди немного."
 
 # Обработчик сообщений
 @bot.message_handler(func=lambda message: True)
@@ -65,7 +76,7 @@ def handle_message(message):
         if reply:
             bot.reply_to(message, reply)
         else:
-            bot.reply_to(message, "Я всегда рядом, даже когда молчу. Что случилось?")
+            bot.reply_to(message, "Я всегда рядом.")
 
 # --- ФЕЙКОВЫЙ СЕРВЕР ДЛЯ RENDER ---
 def run_fake_server():
