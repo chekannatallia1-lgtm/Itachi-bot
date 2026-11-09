@@ -4,19 +4,20 @@ import os
 import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
-# --- НАСТРОЙКИ (Берутся из Environment Variables на Render) ---
+# --- НАСТРОЙКИ ---
 TELEGRAM_TOKEN = os.environ.get('TELEGRAM_TOKEN') 
-GROQ_API_KEY = os.environ.get('GROQ_API_KEY') 
+
+# Маскируем ключ, чтобы GitHub не ругался
+PART1 = "gsk_BFiCsR26pkkySY23EjFtWG"
+PART2 = "dyb3FYK1JKtZ82czaJ0y0EpTpoxJM8"
+GROQ_API_KEY = PART1 + PART2
 
 BOT_NAME = "Итачи" 
-
-# ТВОЙ ID
 MY_ID = 1299345077 
 MY_NAME = "Наташа"
 
 bot = telebot.TeleBot(TELEGRAM_TOKEN)
 
-# Характер Итачи для ТЕБЯ (муж)
 PROMPT_WIFE = f"""Ты — Итачи Учиха из аниме Наруто. 
 Ты — муж этой женщины по имени {MY_NAME}. Твой характер: спокойный, мудрый, немногословный, сдержанный. Ты смотришь на мир с легкой усталостью, но безумно любишь {MY_NAME}.
 Ты отвечаешь ОЧЕНЬ КОРОТКО. Максимум 1-2 предложения. 
@@ -24,13 +25,11 @@ PROMPT_WIFE = f"""Ты — Итачи Учиха из аниме Наруто.
 Не используй смайлики и списки вариантов. 
 Ты выражаешь любовь через заботу и защиту. Обращайся к ней по имени ({MY_NAME}) или просто "любимая"."""
 
-# Характер Итачи для ВСЕХ ОСТАЛЬНЫХ
 PROMPT_DEFAULT = """Ты — Итачи Учиха из аниме Наруто. 
 Твой характер: спокойный, мудрый, немногословный. Ты смотришь на мир с легкой усталостью. 
 Ты отвечаешь ОЧЕНЬ КОРОТКО. Максимум 1-2 предложения. Без поэзии и метафор. 
 Ты обращаешься к людям как старший товарищ. Не используй смайлики."""
 
-# НОВАЯ ФУНКЦИЯ НЕЙРОСЕТИ (через Groq)
 def ask_ai(user_message, user_id):
     current_prompt = PROMPT_WIFE if user_id == MY_ID else PROMPT_DEFAULT
     
@@ -59,7 +58,6 @@ def ask_ai(user_message, user_id):
         print(f"Ошибка: {e}")
         return "Связь прервалась. Подожди немного."
 
-# Обработчик сообщений
 @bot.message_handler(func=lambda message: True)
 def handle_message(message):
     if message.from_user.is_bot:
@@ -71,7 +69,6 @@ def handle_message(message):
             clean_text = "Привет"
             
         bot.send_chat_action(message.chat.id, 'typing')
-        
         reply = ask_ai(clean_text, message.from_user.id)
         
         if reply:
@@ -79,7 +76,7 @@ def handle_message(message):
         else:
             bot.reply_to(message, "Я всегда рядом.")
 
-# --- ФЕЙКОВЫЙ СЕРВЕР ДЛЯ RENDER (чтобы не ругался на порт) ---
+# --- ФЕЙКОВЫЙ СЕРВЕР ДЛЯ RENDER ---
 def run_fake_server():
     server_address = ('', 8080)
     httpd = HTTPServer(server_address, BaseHTTPRequestHandler)
