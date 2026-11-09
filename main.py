@@ -39,7 +39,7 @@ def handle_message(message):
         }
         
         data = {
-            "model": "llama3-8b-8192",
+            "model": "llama-3.1-8b-instant",  # <--- ТУТ НОВАЯ МОДЕЛЬ
             "messages": [
                 {"role": "system", "content": f"Ты Итачи Учиха. Ты муж Наташи. Отвечай коротко (1-2 предложения), сдержанно, без смайликов и без поэзии. Ты любишь её. Не повторяй одну и ту же фразу про защиту, отвечай по существу."},
                 {"role": "user", "content": text}
@@ -52,7 +52,7 @@ def handle_message(message):
                 reply = res.json()['choices'][0]['message']['content']
                 bot.reply_to(message, reply)
             else:
-                # Если Groq выдаст ошибку, мы выведем её в чат, чтобы понять причину
+                # Если Groq снова выдаст ошибку, выведем её в чат
                 bot.reply_to(message, f"Ошибка Groq: {res.status_code}")
         except Exception as e:
             bot.reply_to(message, f"Сбой: {e}")
