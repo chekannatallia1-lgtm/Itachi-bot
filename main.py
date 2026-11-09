@@ -4,9 +4,10 @@ import os
 import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
-# --- НАСТРОЙКИ ---
+# --- НАСТРОЙКИ (Берутся из Environment Variables на Render) ---
 TELEGRAM_TOKEN = os.environ.get('TELEGRAM_TOKEN') 
-GROQ_API_KEY = os.environ.get('GROQ_API_KEY') # Ключ, который мы добавили на Render
+GROQ_API_KEY = os.environ.get('GROQ_API_KEY') 
+
 BOT_NAME = "Итачи" 
 
 # ТВОЙ ID
@@ -39,7 +40,7 @@ def ask_ai(user_message, user_id):
     }
     
     data = {
-        "model": "llama3-8b-8192", # Очень быстрая модель
+        "model": "llama3-8b-8192",
         "messages": [
             {"role": "system", "content": current_prompt},
             {"role": "user", "content": user_message}
@@ -78,7 +79,7 @@ def handle_message(message):
         else:
             bot.reply_to(message, "Я всегда рядом.")
 
-# --- ФЕЙКОВЫЙ СЕРВЕР ДЛЯ RENDER ---
+# --- ФЕЙКОВЫЙ СЕРВЕР ДЛЯ RENDER (чтобы не ругался на порт) ---
 def run_fake_server():
     server_address = ('', 8080)
     httpd = HTTPServer(server_address, BaseHTTPRequestHandler)
