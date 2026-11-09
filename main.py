@@ -12,24 +12,6 @@ bot = telebot.TeleBot(TELEGRAM_TOKEN)
 MY_ID = 1299345077
 MY_NAME = "Наташа"
 
-# Новая команда, чтобы узнать точные названия моделей
-@bot.message_handler(commands=['models'])
-def get_models(message):
-    headers = {"Authorization": f"Bearer {GROQ_API_KEY}"}
-    try:
-        res = requests.get("https://api.groq.com/openai/v1/models", headers=headers)
-        if res.status_code == 200:
-            models = res.json().get('data', [])
-            model_names = [m['id'] for m in models]
-            text = "Доступные модели:\n" + "\n".join(model_names)
-            # Если список длинный, разобьем на части
-            for i in range(0, len(text), 4000):
-                bot.reply_to(message, text[i:i+4000])
-        else:
-            bot.reply_to(message, f"Ошибка: {res.status_code}")
-    except Exception as e:
-        bot.reply_to(message, f"Сбой: {e}")
-
 @bot.message_handler(func=lambda message: True)
 def handle_message(message):
     if message.from_user.is_bot:
@@ -49,7 +31,7 @@ def handle_message(message):
         }
         
         data = {
-            "model": "llama3-70b-8192", # Мы пока оставили старую, но заменим после твоего ответа
+            "model": "openai/gpt-oss-120b",  # <--- САМАЯ УМНАЯ МОДЕЛЬ ИЗ СПИСКА
             "messages": [
                 {"role": "system", "content": f"Ты персонаж Итачи Учиха из Наруто. Отвечай кратко, спокойно, мудро. Обращайся к Наташе. Без смайликов и без стихов."},
                 {"role": "user", "content": text}
