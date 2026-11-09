@@ -31,7 +31,7 @@ def handle_message(message):
         }
         
         data = {
-            "model": "llama3-70b-8192",
+            "model": "llama-3.3-70b-versatile",  # <--- НОВАЯ МОДЕЛЬ
             "messages": [
                 {"role": "system", "content": f"Ты персонаж Итачи Учиха из Наруто. Отвечай кратко, спокойно, мудро. Обращайся к Наташе. Без смайликов и без стихов."},
                 {"role": "user", "content": text}
@@ -45,7 +45,7 @@ def handle_message(message):
                 reply = res.json()['choices'][0]['message']['content']
                 bot.reply_to(message, reply)
             else:
-                bot.reply_to(message, f"Ошибка Groq: {res.status_code} - {res.text}")
+                bot.reply_to(message, f"Ошибка Groq: {res.status_code}")
         except Exception as e:
             bot.reply_to(message, f"Сбой: {e}")
 
