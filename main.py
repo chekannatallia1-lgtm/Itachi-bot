@@ -3,17 +3,10 @@ import requests
 import os
 import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
+import urllib.parse
 
 # Твой токен вставлен
 TELEGRAM_TOKEN = "8993062067:AAGULvEE4RwbwgYNcf4Xn1qN5Iaj_9MTw_4"
-
-# Ключ Groq (вшит)
-K1 = "gsk_BFiCsR2"
-K2 = "6pkkySY23E"
-K3 = "jFtWGdyb3FY"
-K4 = "K1JKtZ82cz"
-K5 = "aJ0y0EpTpoxJM8"
-GROQ_API_KEY = K1 + K2 + K3 + K4 + K5
 
 bot = telebot.TeleBot(TELEGRAM_TOKEN)
 
@@ -34,30 +27,30 @@ def handle_message(message):
             
         bot.send_chat_action(message.chat.id, 'typing')
         
-        headers = {
-            "Authorization": f"Bearer {GROQ_API_KEY}",
-            "Content-Type": "application/json"
-        }
+        # Задаем характер Итачи
+        system_prompt = f"Ты Итачи Учиха. Ты муж Наташи. Отвечай коротко (1-2 предложения), сдержанно, без смайликов и без поэзии. Ты любишь её и защищаешь. Твой ответ должен быть только текстом."
         
-        data = {
-            "model": "llama3-8b-8192",
-            "messages": [
-                {"role": "system", "content": f"Ты Итачи Учиха. Ты муж Наташи. Отвечай коротко (1-2 предложения), сдержанно, без смайликов и без поэзии. Ты любишь её и защищаешь."},
-                {"role": "user", "content": text}
-            ]
-        }
+        # Кодируем запрос для ссылки
+        full_prompt = f"{system_prompt}\n\nНаташа: {text}\nИтачи:"
+        encoded_prompt = urllib.parse.quote(full_prompt)
+        
+        # Используем модель openai (она умная и не пишет стихи)
+        url = f"https://text.pollinations.ai/{encoded_prompt}?model=openai"
         
         try:
-            res = requests.post("https://api.groq.com/openai/v1/chat/completions", headers=headers, json=data)
+            res = requests.get(url, timeout=30)
             if res.status_code == 200:
-                reply = res.json()['choices'][0]['message']['content']
+                reply = res.text.strip()
+                # Убираем кавычки, если нейросеть их поставила
+                if reply.startswith('"') and reply.endswith('"'):
+                    reply = reply[1:-1]
                 bot.reply_to(message, reply)
             else:
-                bot.reply_to(message, "Мой разум затуманен.")
+                bot.reply_to(message, "Хм. Мой разум затуманен.")
         except:
             bot.reply_to(message, "Связь прервалась.")
 
-# --- ФЕЙКОВЫЙ СЕРВЕР ДЛЯ RENDER (чтобы не ругался на порт) ---
+# --- ФЕЙКОВЫЙ СЕРВЕР ДЛЯ RENDER ---
 def run_fake_server():
     server_address = ('', 8080)
     httpd = HTTPServer(server_address, BaseHTTPRequestHandler)
