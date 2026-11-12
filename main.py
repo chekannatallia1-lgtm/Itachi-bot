@@ -7,7 +7,9 @@ import random
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
 TELEGRAM_TOKEN = "8993062067:AAGULvEE4RwbwgYNcf4Xn1qN5Iaj_9MTw_4"
-GROQ_API_KEY = "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"
+
+# Твой ключ OpenRouter
+OPENROUTER_API_KEY = "sk-orca-jm0SpeP4wA0lSA9mOnWGAR1h7yzzAnTIVFPs2fFlPv3"
 
 bot = telebot.TeleBot(TELEGRAM_TOKEN)
 
@@ -22,22 +24,29 @@ def random_messages():
         time.sleep(10800) 
         try:
             bot.send_chat_action(CHAT_ID, 'typing')
-            headers = {"Authorization": f"Bearer {GROQ_API_KEY}", "Content-Type": "application/json"}
+            headers = {
+                "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+                "Content-Type": "application/json",
+                "HTTP-Referer": "https://t.me", # ОБЯЗАТЕЛЬНО ДЛЯ OPENROUTER
+                "X-Title": "Itachi Bot"
+            }
             data = {
-                "model": "qwen/qwen3.8-27b",
+                "model": "meta-llama/llama-3.1-8b-instruct:free",
                 "messages": [
                     {"role": "system", "content": f"Ты Итачи Учиха. Ты муж девушек Наташи и Вики (они подруги). Наташа живет в Минске, у неё есть кот Яхве и свинка Чипс. Напиши короткое (1 предложение), спокойное, мудрое сообщение в чат. Без смайликов."},
                     {"role": "user", "content": "Напиши сообщение."}
                 ],
                 "max_tokens": 50
             }
-            res = requests.post("https://api.groq.com/openai/v1/chat/completions", headers=headers, json=data, timeout=20)
+            res = requests.post("https://openrouter.ai/api/v1/chat/completions", headers=headers, json=data, timeout=20)
             if res.status_code == 200:
                 reply = res.json()['choices'][0]['message']['content']
                 if reply:
                     bot.send_message(CHAT_ID, reply)
+            else:
+                print(f"Ошибка рандома: {res.text}")
         except Exception as e:
-            print(f"Ошибка рандома: {e}")
+            print(f"Сбой рандома: {e}")
 
 @bot.message_handler(func=lambda message: True)
 def handle_message(message):
@@ -61,22 +70,24 @@ def handle_message(message):
         
     bot.send_chat_action(message.chat.id, 'typing')
     
-    headers = {"Authorization": f"Bearer {GROQ_API_KEY}", "Content-Type": "application/json"}
+    headers = {
+        "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+        "Content-Type": "application/json",
+        "HTTP-Referer": "https://t.me",
+        "X-Title": "Itachi Bot"
+    }
     
-    # Прописываем полную информацию для ВСЕХ, чтобы он никого не забывал
     base_prompt = "Ты Итачи Учиха из Наруто. Твои жены — Наташа и Вика (они подруги). Наташа живет в Минске, у неё есть кот Яхве и свинка Чипс. Ты любишь их обеих."
     
     if message.from_user.id == MY_ID:
-        prompt = base_prompt + " Отвечай Наташе спокойно, сдержанно, с глубокой теплотой. Ты серьезен и мудр, как настоящий Итачи. Не паясничай. 1-2 предложения. Без смайликов и стихов."
-        
+        prompt = base_prompt + " Отвечай Наташе спокойно, сдержанно, с глубокой теплотой. Ты серьезен и мудр. Не паясничай. 1-2 предложения. Без смайликов и стихов."
     elif message.from_user.id == VIKA_ID:
-        prompt = base_prompt + " Отвечай Вике спокойно, сдержанно, с глубокой теплотой. Ты серьезен и мудр, как настоящий Итачи. Не паясничай. 1-2 предложения. Без смайликов и стихов."
-        
+        prompt = base_prompt + " Отвечай Вике спокойно, сдержанно, с глубокой теплотой. Ты серьезен и мудр. Не паясничай. 1-2 предложения. Без смайликов и стихов."
     else:
         prompt = base_prompt + " Отвечай кратко (1-2 предложения), спокойно, немного отстраненно и мудро, как старший товарищ. Не используй смайлики."
         
     data = {
-        "model": "qwen/qwen3.8-27b",
+        "model": "meta-llama/llama-3.1-8b-instruct:free",
         "messages": [
             {"role": "system", "content": prompt},
             {"role": "user", "content": text}
@@ -85,7 +96,7 @@ def handle_message(message):
     }
     
     try:
-        res = requests.post("https://api.groq.com/openai/v1/chat/completions", headers=headers, json=data, timeout=20)
+        res = requests.post("https://openrouter.ai/api/v1/chat/completions", headers=headers, json=data, timeout=20)
         if res.status_code == 200:
             reply = res.json()['choices'][0]['message']['content']
             if not reply or len(reply.strip()) == 0:
@@ -95,7 +106,7 @@ def handle_message(message):
             else:
                 bot.reply_to(message, reply)
         else:
-            bot.reply_to(message, f"Ошибка Groq: {res.status_code}")
+            bot.reply_to(message, f"Ошибка OpenRouter: {res.status_code}")
     except Exception as e:
         bot.reply_to(message, f"Сбой: {e}")
 
