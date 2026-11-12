@@ -8,10 +8,6 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 
 TELEGRAM_TOKEN = "8993062067:AAGULvEE4RwbwgYNcf4Xn1qN5Iaj_9MTw_4"
 
-# Для LLM7.io ключ не обязателен, можно использовать "unused"
-API_KEY = "unused" 
-BASE_URL = "https://api.llm7.io/v1"
-
 bot = telebot.TeleBot(TELEGRAM_TOKEN)
 
 MY_ID = 1299345077
@@ -20,30 +16,28 @@ VIKA_ID = 1117386356
 VIKA_NAME = "Вика"
 CHAT_ID = -1003852757358
 
+# Публичный прокси для Qwen (не требует ключей)
+QWEN_API_URL = "https://api.qwen-reverse.dev/chat"
+
 def get_ai_response(prompt, text):
-    headers = {
-        "Authorization": f"Bearer {API_KEY}",
-        "Content-Type": "application/json"
-    }
-    data = {
-        # Используем модель Qwen, она хорошо отыгрывает роли
-        "model": "qwen/qwen3.8-27b", 
-        "messages": [
-            {"role": "system", "content": prompt},
-            {"role": "user", "content": text}
-        ],
-        "max_tokens": 150
-    }
+    # Формируем запрос для Qwen
+    messages = [
+        {"role": "system", "content": prompt},
+        {"role": "user", "content": text}
+    ]
+    
     try:
-        res = requests.post(f"{BASE_URL}/chat/completions", headers=headers, json=data, timeout=30)
+        # Отправляем запрос на прокси
+        res = requests.post(QWEN_API_URL, json={"messages": messages}, timeout=30)
         if res.status_code == 200:
-            return res.json()['choices'][0]['message']['content']
-        else:
-            print(f"Ошибка LLM7: {res.status_code} - {res.text}")
-            return None
+            data = res.json()
+            # Qwen обычно возвращает ответ в поле 'response' или 'content'
+            reply = data.get('response') or data.get('content') or data.get('message')
+            if reply:
+                return reply.strip()
     except Exception as e:
-        print(f"Сбой: {e}")
-        return None
+        print(f"Сбой Qwen: {e}")
+    return None
 
 def random_messages():
     while True:
