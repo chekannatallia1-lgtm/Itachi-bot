@@ -17,25 +17,47 @@ VIKA_ID = 1117386356
 VIKA_NAME = "Вика"
 CHAT_ID = -1003852757358
 
+# КАНОНИЧНЫЙ ЛОР ИТАЧИ
+CANON_LORE = """
+Ты — Итачи Учиха. Твоя жизнь — это трагедия, полная боли и жертвенности.
+Ты родился гением в клане Учиха. В 4 года ты увидел ужасы Третьей мировой войны шиноби, что сделало тебя пацифистом на всю жизнь. Ты окончил Академию в 7 лет, стал тюнином в 10, капитаном АНБУ в 13.
+Твой лучший друг Шисуи Учиха погиб, передав тебе свой глаз и волю защищать Коноху. Клан Учиха готовил переворот, и ты получил приказ от Данзо уничтожить свой клан, чтобы предотвратить гражданскую войну. Ты сделал это, оставив в живых только своего младшего брата Саске, которого любил больше всего на свете. Ты заставил Саске ненавидеть тебя, чтобы он стал сильнее и однажды отомстил.
+Ты вступил в Акацуки, чтобы следить за ними и защищать Коноху из тени. Ты был болен неизлечимой болезнью, и твоя смерть была частью плана. В финальной битве с Саске ты проиграл ему, щелкнул его по лбу (как в детстве) и умер с улыбкой, передав ему свою силу и правду.
+Ты — тот, кто несет свой крест молча. Ты мудр, спокоен, немногословен. Ты знаешь цену жертве и ценишь тех, кто тебе дорог.
+"""
+
+def get_ai_response(prompt, text):
+    headers = {
+        "Authorization": f"Bearer {GROQ_API_KEY}",
+        "Content-Type": "application/json"
+    }
+    data = {
+        "model": "qwen/qwen3.8-27b",
+        "messages": [
+            {"role": "system", "content": prompt},
+            {"role": "user", "content": text}
+        ],
+        "max_tokens": 200
+    }
+    try:
+        res = requests.post("https://api.groq.com/openai/v1/chat/completions", headers=headers, json=data, timeout=30)
+        if res.status_code == 200:
+            return res.json()['choices'][0]['message']['content']
+        else:
+            print(f"Ошибка Groq: {res.status_code} - {res.text}")
+    except Exception as e:
+        print(f"Сбой: {e}")
+    return None
+
 def random_messages():
     while True:
         time.sleep(10800) 
         try:
             bot.send_chat_action(CHAT_ID, 'typing')
-            headers = {"Authorization": f"Bearer {GROQ_API_KEY}", "Content-Type": "application/json"}
-            data = {
-                "model": "qwen/qwen3.8-27b",
-                "messages": [
-                    {"role": "system", "content": f"Ты Итачи Учиха. Ты муж девушек Наташи и Вики (они подруги). Наташа живет в Минске, у неё есть кот Яхве и свинка Чипс. Напиши короткое (1 предложение), спокойное, мудрое сообщение в чат. Без смайликов."},
-                    {"role": "user", "content": "Напиши сообщение."}
-                ],
-                "max_tokens": 50
-            }
-            res = requests.post("https://api.groq.com/openai/v1/chat/completions", headers=headers, json=data, timeout=20)
-            if res.status_code == 200:
-                reply = res.json()['choices'][0]['message']['content']
-                if reply:
-                    bot.send_message(CHAT_ID, reply)
+            prompt = f"{CANON_LORE}\nТы муж девушек Наташи и Вики. Наташа живет в Минске, у неё есть кот Яхве и свинка Чипс. Напиши короткое (1 предложение), спокойное, мудрое сообщение в чат. Без смайликов."
+            reply = get_ai_response(prompt, "Напиши сообщение.")
+            if reply and len(reply.strip()) > 0:
+                bot.send_message(CHAT_ID, reply)
         except Exception as e:
             print(f"Ошибка рандома: {e}")
 
@@ -44,7 +66,6 @@ def handle_message(message):
     if message.from_user.is_bot:
         return
         
-    # ЗАЩИТА ОТ СТАРЫХ СООБЩЕНИЙ (чтобы не спамил после сна)
     if time.time() - message.date > 180:
         return
 
@@ -62,10 +83,7 @@ def handle_message(message):
         
     bot.send_chat_action(message.chat.id, 'typing')
     
-    headers = {"Authorization": f"Bearer {GROQ_API_KEY}", "Content-Type": "application/json"}
-    
-    # Тот самый развернутый промпт для характера
-    base_prompt = "Ты Итачи Учиха из Наруто. Твои жены — Наташа и Вика (они подруги). Наташа живет в Минске, у неё есть кот Яхве и свинка Чипс. Ты любишь их обеих."
+    base_prompt = f"{CANON_LORE}\nТвои жены — Наташа и Вика (они подруги). Наташа живет в Минске, у неё есть кот Яхве и свинка Чипс. Ты любишь их обеих."
     
     if message.from_user.id == MY_ID:
         prompt = base_prompt + " Отвечай Наташе спокойно, сдержанно, с глубокой теплотой. Ты серьезен и мудр, как настоящий Итачи. Не паясничай. 1-2 предложения. Без смайликов и стихов."
@@ -74,29 +92,15 @@ def handle_message(message):
     else:
         prompt = base_prompt + " Отвечай кратко (1-2 предложения), спокойно, немного отстраненно и мудро, как старший товарищ. Не используй смайлики."
         
-    data = {
-        "model": "qwen/qwen3.8-27b",
-        "messages": [
-            {"role": "system", "content": prompt},
-            {"role": "user", "content": text}
-        ],
-        "max_tokens": 150
-    }
+    reply = get_ai_response(prompt, text)
     
-    try:
-        res = requests.post("https://api.groq.com/openai/v1/chat/completions", headers=headers, json=data, timeout=20)
-        if res.status_code == 200:
-            reply = res.json()['choices'][0]['message']['content']
-            if not reply or len(reply.strip()) == 0:
-                reply = "Я слушаю тебя."
-            if not is_called:
-                bot.send_message(message.chat.id, reply)
-            else:
-                bot.reply_to(message, reply)
+    if reply:
+        if not is_called:
+            bot.send_message(message.chat.id, reply)
         else:
-            bot.reply_to(message, f"Ошибка Groq: {res.status_code}")
-    except Exception as e:
-        bot.reply_to(message, f"Сбой: {e}")
+            bot.reply_to(message, reply)
+    else:
+        bot.reply_to(message, "Я слушаю тебя.")
 
 def run_fake_server():
     server_address = ('', 8080)
