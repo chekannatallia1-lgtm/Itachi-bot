@@ -8,8 +8,8 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 
 TELEGRAM_TOKEN = "8993062067:AAGULvEE4RwbwgYNcf4Xn1qN5Iaj_9MTw_4"
 
-# Твой ключ OpenRouter
-OPENROUTER_API_KEY = "sk-orca-jm0SpeP4wA0lSA9mOnWGAR1h7yzzAnTIVFPs2fFlPv3"
+# Твой новый ключ OpenRouter
+OPENROUTER_API_KEY = "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"
 
 bot = telebot.TeleBot(TELEGRAM_TOKEN)
 
@@ -27,7 +27,7 @@ def random_messages():
             headers = {
                 "Authorization": f"Bearer {OPENROUTER_API_KEY}",
                 "Content-Type": "application/json",
-                "HTTP-Referer": "https://t.me", # ОБЯЗАТЕЛЬНО ДЛЯ OPENROUTER
+                "HTTP-Referer": "https://t.me", 
                 "X-Title": "Itachi Bot"
             }
             data = {
@@ -106,6 +106,7 @@ def handle_message(message):
             else:
                 bot.reply_to(message, reply)
         else:
+            # Если ошибка, выводим её прямо в чат
             bot.reply_to(message, f"Ошибка OpenRouter: {res.status_code}")
     except Exception as e:
         bot.reply_to(message, f"Сбой: {e}")
