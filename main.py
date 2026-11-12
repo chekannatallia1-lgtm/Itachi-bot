@@ -44,7 +44,7 @@ def handle_message(message):
     if message.from_user.is_bot:
         return
         
-    # ЗАЩИТА ОТ СТАРЫХ СООБЩЕНИЙ
+    # ЗАЩИТА ОТ СТАРЫХ СООБЩЕНИЙ (чтобы не спамил после сна)
     if time.time() - message.date > 180:
         return
 
@@ -64,6 +64,7 @@ def handle_message(message):
     
     headers = {"Authorization": f"Bearer {GROQ_API_KEY}", "Content-Type": "application/json"}
     
+    # Тот самый развернутый промпт для характера
     base_prompt = "Ты Итачи Учиха из Наруто. Твои жены — Наташа и Вика (они подруги). Наташа живет в Минске, у неё есть кот Яхве и свинка Чипс. Ты любишь их обеих."
     
     if message.from_user.id == MY_ID:
