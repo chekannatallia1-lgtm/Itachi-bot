@@ -16,28 +16,30 @@ VIKA_ID = 1117386356
 VIKA_NAME = "Вика"
 CHAT_ID = -1003852757358
 
-# Публичный прокси для Qwen (не требует ключей)
-QWEN_API_URL = "https://api.qwen-reverse.dev/chat"
+# OVHcloud AI Endpoints (бесплатный анонимный доступ)
+OVH_URL = "https://oai.endpoints.kepler.ai.cloud.ovh.net/v1/chat/completions"
 
 def get_ai_response(prompt, text):
-    # Формируем запрос для Qwen
-    messages = [
-        {"role": "system", "content": prompt},
-        {"role": "user", "content": text}
-    ]
-    
+    headers = {"Content-Type": "application/json"}
+    data = {
+        # Модель Qwen, которая хорошо отыгрывает роли
+        "model": "Qwen3.8-27B", 
+        "messages": [
+            {"role": "system", "content": prompt},
+            {"role": "user", "content": text}
+        ],
+        "max_tokens": 150
+    }
     try:
-        # Отправляем запрос на прокси
-        res = requests.post(QWEN_API_URL, json={"messages": messages}, timeout=30)
+        res = requests.post(OVH_URL, headers=headers, json=data, timeout=30)
         if res.status_code == 200:
-            data = res.json()
-            # Qwen обычно возвращает ответ в поле 'response' или 'content'
-            reply = data.get('response') or data.get('content') or data.get('message')
-            if reply:
-                return reply.strip()
+            return res.json()['choices'][0]['message']['content']
+        else:
+            print(f"Ошибка OVH: {res.status_code} - {res.text}")
+            return None
     except Exception as e:
-        print(f"Сбой Qwen: {e}")
-    return None
+        print(f"Сбой: {e}")
+        return None
 
 def random_messages():
     while True:
