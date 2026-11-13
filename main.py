@@ -7,8 +7,6 @@ import random
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
 TELEGRAM_TOKEN = "8993062067:AAGULvEE4RwbwgYNcf4Xn1qN5Iaj_9MTw_4"
-
-# Ключ берётся из настроек Render (Environment Variables)
 OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
 
 bot = telebot.TeleBot(TELEGRAM_TOKEN)
@@ -34,7 +32,7 @@ def get_ai_response(prompt, text):
             {"role": "system", "content": prompt},
             {"role": "user", "content": text}
         ],
-        "max_tokens": 200
+        "max_completion_tokens": 200  # <--- ИСПРАВЛЕННЫЙ ПАРАМЕТР
     }
     try:
         res = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=data, timeout=30)
