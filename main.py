@@ -6,21 +6,52 @@ import time
 import random
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
-TELEGRAM_TOKEN = "8993062067:AAGULvEE4RwbwgYNcf4Xn1qN5Iaj_9MTw_4"
+# === БЕЗОПАСНОСТЬ ===
+# Токен и ключ берутся из настроек Render, а не из кода
+TELEGRAM_TOKEN = os.environ.get('TELEGRAM_TOKEN')
 OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
 
 bot = telebot.TeleBot(TELEGRAM_TOKEN)
 
+# === ТВОИ ДАННЫЕ ===
 MY_ID = 1299345077
 MY_NAME = "Наташа"
 VIKA_ID = 1117386356
 VIKA_NAME = "Вика"
 CHAT_ID = -1003852757358
 
+# === КАНОНИЧНЫЙ ЛОР ИТАЧИ ===
 CANON_LORE = """
 Ты — Итачи Учиха. Твоя жизнь — это трагедия, полная боли и жертвенности. Ты гений, пацифист, капитан АНБУ. Ты убил свой клан ради мира, оставил Саске. Ты в Акацуки, чтобы следить за ними. Ты умираешь от болезни, но скрываешь это. Ты мудр, спокоен, сдержан. Ты можешь шутить, но только с легкой иронией.
 """
 
+# === ФИЛЬТР РЕКЛАМЫ ===
+def clean_response(text):
+    if not text:
+        return None
+    
+    # Маркеры, после которых начинается реклама
+    ad_markers = [
+        "реклама", "промокод", "подпишись", "переходи по ссылке", 
+        "спонсор", "https://", "http://", "t.me/", "@", 
+        "купить", "скидка", "бесплатно", "канал", "подписывайтесь"
+    ]
+    
+    for marker in ad_markers:
+        if marker in text.lower():
+            parts = text.lower().split(marker)
+            if parts[0].strip():
+                text = text[:len(parts[0])].strip()
+            else:
+                return None # Если маркер в начале, текст не отправляем
+                
+    text = text.strip('"').strip("'").strip()
+    
+    if len(text) < 2:
+        return None
+    return text
+
+# === ЗАПРОС К НЕЙРОСЕТИ ===
 def get_ai_response(prompt, text):
     headers = {
         "Authorization": f"Bearer {OPENAI_API_KEY}",
@@ -32,17 +63,19 @@ def get_ai_response(prompt, text):
             {"role": "system", "content": prompt},
             {"role": "user", "content": text}
         ],
-        "max_completion_tokens": 200  # <--- ИСПРАВЛЕННЫЙ ПАРАМЕТР
+        "max_completion_tokens": 200
     }
     try:
         res = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=data, timeout=30)
         if res.status_code == 200:
-            return res.json()['choices'][0]['message']['content']
+            raw_reply = res.json()['choices'][0]['message']['content']
+            return clean_response(raw_reply)
         else:
-            return f"Ошибка OpenAI: {res.status_code} - {res.text}"
+            return f"Ошибка OpenAI: {res.status_code}"
     except Exception as e:
         return f"Сбой: {e}"
 
+# === СЛУЧАЙНЫЕ СООБЩЕНИЯ ===
 def random_messages():
     while True:
         time.sleep(10800) 
@@ -50,13 +83,12 @@ def random_messages():
             bot.send_chat_action(CHAT_ID, 'typing')
             prompt = f"{CANON_LORE}\nТы муж девушек Наташи и Вики. Наташа живет в Минске, у неё есть кот Яхве и свинка Чипс. Напиши короткое (1 предложение), спокойное, мудрое сообщение в чат. Без смайликов."
             reply = get_ai_response(prompt, "Напиши сообщение.")
-            if reply and "Ошибка" not in reply:
+            if reply:
                 bot.send_message(CHAT_ID, reply)
-            else:
-                print(reply)
         except Exception as e:
             print(f"Ошибка рандома: {e}")
 
+# === ОБРАБОТЧИК СООБЩЕНИЙ ===
 @bot.message_handler(func=lambda message: True)
 def handle_message(message):
     if message.from_user.is_bot:
@@ -98,9 +130,8 @@ def handle_message(message):
                 bot.send_message(message.chat.id, reply)
             else:
                 bot.reply_to(message, reply)
-    else:
-        bot.reply_to(message, "Я слушаю тебя.")
 
+# === ФЕЙКОВЫЙ СЕРВЕР ДЛЯ RENDER ===
 def run_fake_server():
     server_address = ('', 8080)
     httpd = HTTPServer(server_address, BaseHTTPRequestHandler)
