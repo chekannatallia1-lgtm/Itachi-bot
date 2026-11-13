@@ -7,7 +7,7 @@ import random
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
 TELEGRAM_TOKEN = "8993062067:AAGULvEE4RwbwgYNcf4Xn1qN5Iaj_9MTw_4"
-OPENAI_API_KEY = "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"
+OPENAI_API_KEY = "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"
 
 bot = telebot.TeleBot(TELEGRAM_TOKEN)
 
@@ -27,7 +27,7 @@ def get_ai_response(prompt, text):
         "Content-Type": "application/json"
     }
     data = {
-        "model": "gpt-4o-mini", # Самая дешевая и быстрая модель
+        "model": "gpt-4o-mini", 
         "messages": [
             {"role": "system", "content": prompt},
             {"role": "user", "content": text}
@@ -92,7 +92,7 @@ def handle_message(message):
     
     if reply:
         if "Ошибка" in reply or "Сбой" in reply:
-            bot.reply_to(message, reply) # Выведем ошибку в чат, чтобы понять
+            bot.reply_to(message, reply) 
         else:
             if not is_called:
                 bot.send_message(message.chat.id, reply)
