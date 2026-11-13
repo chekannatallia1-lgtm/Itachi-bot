@@ -7,7 +7,6 @@ import random
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
 # === БЕЗОПАСНОСТЬ ===
-# Токен и ключ берутся из настроек Render, а не из кода
 TELEGRAM_TOKEN = os.environ.get('TELEGRAM_TOKEN')
 OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
 
@@ -30,7 +29,6 @@ def clean_response(text):
     if not text:
         return None
     
-    # Маркеры, после которых начинается реклама
     ad_markers = [
         "реклама", "промокод", "подпишись", "переходи по ссылке", 
         "спонсор", "https://", "http://", "t.me/", "@", 
@@ -43,13 +41,32 @@ def clean_response(text):
             if parts[0].strip():
                 text = text[:len(parts[0])].strip()
             else:
-                return None # Если маркер в начале, текст не отправляем
+                return None
                 
     text = text.strip('"').strip("'").strip()
     
     if len(text) < 2:
         return None
     return text
+
+# === ФУНКЦИЯ РАЗБИВКИ ДЛИННЫХ СООБЩЕНИЙ ===
+def send_long_message(chat_id, text, reply_to=None):
+    # Телеграм разрешает максимум 4096 символов
+    limit = 4000 
+    if len(text) <= limit:
+        if reply_to:
+            bot.reply_to(reply_to, text)
+        else:
+            bot.send_message(chat_id, text)
+    else:
+        # Разбиваем текст на части
+        chunks = [text[i:i+limit] for i in range(0, len(text), limit)]
+        for i, chunk in enumerate(chunks):
+            if i == 0 and reply_to:
+                bot.reply_to(reply_to, chunk)
+            else:
+                bot.send_message(chat_id, chunk)
+            time.sleep(0.5) # Пауза между сообщениями, чтобы они шли по порядку
 
 # === ЗАПРОС К НЕЙРОСЕТИ ===
 def get_ai_response(prompt, text):
@@ -63,10 +80,10 @@ def get_ai_response(prompt, text):
             {"role": "system", "content": prompt},
             {"role": "user", "content": text}
         ],
-        "max_completion_tokens": 200
+        "max_completion_tokens": 1500 # УВЕЛИЧЕНО ДЛЯ ДЛИННЫХ ОТВЕТОВ
     }
     try:
-        res = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=data, timeout=30)
+        res = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=data, timeout=60)
         if res.status_code == 200:
             raw_reply = res.json()['choices'][0]['message']['content']
             return clean_response(raw_reply)
@@ -84,7 +101,7 @@ def random_messages():
             prompt = f"{CANON_LORE}\nТы муж девушек Наташи и Вики. Наташа живет в Минске, у неё есть кот Яхве и свинка Чипс. Напиши короткое (1 предложение), спокойное, мудрое сообщение в чат. Без смайликов."
             reply = get_ai_response(prompt, "Напиши сообщение.")
             if reply:
-                bot.send_message(CHAT_ID, reply)
+                send_long_message(CHAT_ID, reply)
         except Exception as e:
             print(f"Ошибка рандома: {e}")
 
@@ -111,12 +128,12 @@ def handle_message(message):
         
     bot.send_chat_action(message.chat.id, 'typing')
     
-    base_prompt = f"{CANON_LORE}\nТвои жены — Наташа и Вика (они подруги). Наташа живет в Минске. Ты любишь их обеих. Отвечай уместно, можешь иногда шутить в стиле Итачи."
+    base_prompt = f"{CANON_LORE}\nТвои жены — Наташа и Вика (они подруги). Наташа живет в Минске. Ты любишь их обеих. Отвечай уместно, можешь иногда шутить в стиле Итачи. Ты можешь давать развернутые ответы, если тебя об этом просят."
     
     if message.from_user.id == MY_ID:
-        prompt = base_prompt + " Отвечай Наташе спокойно, сдержанно, с глубокой теплотой. 1-2 предложения. Без смайликов."
+        prompt = base_prompt + " Отвечай Наташе спокойно, сдержанно, с глубокой теплотой. Без смайликов."
     elif message.from_user.id == VIKA_ID:
-        prompt = base_prompt + " Отвечай Вике спокойно, сдержанно, с глубокой теплотой. 1-2 предложения. Без смайликов."
+        prompt = base_prompt + " Отвечай Вике спокойно, сдержанно, с глубокой теплотой. Без смайликов."
     else:
         prompt = base_prompt + " Отвечай кратко, спокойно, отстраненно и мудро. Не используй смайлики."
         
@@ -127,9 +144,9 @@ def handle_message(message):
             bot.reply_to(message, reply) 
         else:
             if not is_called:
-                bot.send_message(message.chat.id, reply)
+                send_long_message(message.chat.id, reply)
             else:
-                bot.reply_to(message, reply)
+                send_long_message(message.chat.id, reply, reply_to=message)
 
 # === ФЕЙКОВЫЙ СЕРВЕР ДЛЯ RENDER ===
 def run_fake_server():
