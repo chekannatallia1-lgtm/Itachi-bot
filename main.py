@@ -7,7 +7,7 @@ import random
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
 TELEGRAM_TOKEN = "8993062067:AAGULvEE4RwbwgYNcf4Xn1qN5Iaj_9MTw_4"
-GROQ_API_KEY = "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"
+OPENAI_API_KEY = "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"
 
 bot = telebot.TeleBot(TELEGRAM_TOKEN)
 
@@ -17,22 +17,17 @@ VIKA_ID = 1117386356
 VIKA_NAME = "Вика"
 CHAT_ID = -1003852757358
 
-# КАНОНИЧНЫЙ ЛОР ИТАЧИ
 CANON_LORE = """
-Ты — Итачи Учиха. Твоя жизнь — это трагедия, полная боли и жертвенности.
-Ты родился гением в клане Учиха. В 4 года ты увидел ужасы Третьей мировой войны шиноби, что сделало тебя пацифистом на всю жизнь. Ты окончил Академию в 7 лет, стал тюнином в 10, капитаном АНБУ в 13.
-Твой лучший друг Шисуи Учиха погиб, передав тебе свой глаз и волю защищать Коноху. Клан Учиха готовил переворот, и ты получил приказ от Данзо уничтожить свой клан, чтобы предотвратить гражданскую войну. Ты сделал это, оставив в живых только своего младшего брата Саске, которого любил больше всего на свете. Ты заставил Саске ненавидеть тебя, чтобы он стал сильнее и однажды отомстил.
-Ты вступил в Акацуки, чтобы следить за ними и защищать Коноху из тени. Ты был болен неизлечимой болезнью, и твоя смерть была частью плана. В финальной битве с Саске ты проиграл ему, щелкнул его по лбу (как в детстве) и умер с улыбкой, передав ему свою силу и правду.
-Ты — тот, кто несет свой крест молча. Ты мудр, спокоен, немногословен. Ты знаешь цену жертве и ценишь тех, кто тебе дорог.
+Ты — Итачи Учиха. Твоя жизнь — это трагедия, полная боли и жертвенности. Ты гений, пацифист, капитан АНБУ. Ты убил свой клан ради мира, оставил Саске. Ты в Акацуки, чтобы следить за ними. Ты умираешь от болезни, но скрываешь это. Ты мудр, спокоен, сдержан. Ты можешь шутить, но только с легкой иронией.
 """
 
 def get_ai_response(prompt, text):
     headers = {
-        "Authorization": f"Bearer {GROQ_API_KEY}",
+        "Authorization": f"Bearer {OPENAI_API_KEY}",
         "Content-Type": "application/json"
     }
     data = {
-        "model": "qwen/qwen3.8-27b",
+        "model": "gpt-4o-mini", # Самая дешевая и быстрая модель
         "messages": [
             {"role": "system", "content": prompt},
             {"role": "user", "content": text}
@@ -40,14 +35,13 @@ def get_ai_response(prompt, text):
         "max_tokens": 200
     }
     try:
-        res = requests.post("https://api.groq.com/openai/v1/chat/completions", headers=headers, json=data, timeout=30)
+        res = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=data, timeout=30)
         if res.status_code == 200:
             return res.json()['choices'][0]['message']['content']
         else:
-            print(f"Ошибка Groq: {res.status_code} - {res.text}")
+            return f"Ошибка OpenAI: {res.status_code} - {res.text}"
     except Exception as e:
-        print(f"Сбой: {e}")
-    return None
+        return f"Сбой: {e}"
 
 def random_messages():
     while True:
@@ -56,8 +50,10 @@ def random_messages():
             bot.send_chat_action(CHAT_ID, 'typing')
             prompt = f"{CANON_LORE}\nТы муж девушек Наташи и Вики. Наташа живет в Минске, у неё есть кот Яхве и свинка Чипс. Напиши короткое (1 предложение), спокойное, мудрое сообщение в чат. Без смайликов."
             reply = get_ai_response(prompt, "Напиши сообщение.")
-            if reply and len(reply.strip()) > 0:
+            if reply and "Ошибка" not in reply:
                 bot.send_message(CHAT_ID, reply)
+            else:
+                print(reply)
         except Exception as e:
             print(f"Ошибка рандома: {e}")
 
@@ -83,22 +79,25 @@ def handle_message(message):
         
     bot.send_chat_action(message.chat.id, 'typing')
     
-    base_prompt = f"{CANON_LORE}\nТвои жены — Наташа и Вика (они подруги). Наташа живет в Минске, у неё есть кот Яхве и свинка Чипс. Ты любишь их обеих."
+    base_prompt = f"{CANON_LORE}\nТвои жены — Наташа и Вика (они подруги). Наташа живет в Минске. Ты любишь их обеих. Отвечай уместно, можешь иногда шутить в стиле Итачи."
     
     if message.from_user.id == MY_ID:
-        prompt = base_prompt + " Отвечай Наташе спокойно, сдержанно, с глубокой теплотой. Ты серьезен и мудр, как настоящий Итачи. Не паясничай. 1-2 предложения. Без смайликов и стихов."
+        prompt = base_prompt + " Отвечай Наташе спокойно, сдержанно, с глубокой теплотой. 1-2 предложения. Без смайликов."
     elif message.from_user.id == VIKA_ID:
-        prompt = base_prompt + " Отвечай Вике спокойно, сдержанно, с глубокой теплотой. Ты серьезен и мудр, как настоящий Итачи. Не паясничай. 1-2 предложения. Без смайликов и стихов."
+        prompt = base_prompt + " Отвечай Вике спокойно, сдержанно, с глубокой теплотой. 1-2 предложения. Без смайликов."
     else:
-        prompt = base_prompt + " Отвечай кратко (1-2 предложения), спокойно, немного отстраненно и мудро, как старший товарищ. Не используй смайлики."
+        prompt = base_prompt + " Отвечай кратко, спокойно, отстраненно и мудро. Не используй смайлики."
         
     reply = get_ai_response(prompt, text)
     
     if reply:
-        if not is_called:
-            bot.send_message(message.chat.id, reply)
+        if "Ошибка" in reply or "Сбой" in reply:
+            bot.reply_to(message, reply) # Выведем ошибку в чат, чтобы понять
         else:
-            bot.reply_to(message, reply)
+            if not is_called:
+                bot.send_message(message.chat.id, reply)
+            else:
+                bot.reply_to(message, reply)
     else:
         bot.reply_to(message, "Я слушаю тебя.")
 
