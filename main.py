@@ -7,7 +7,9 @@ import random
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
 TELEGRAM_TOKEN = "8993062067:AAGULvEE4RwbwgYNcf4Xn1qN5Iaj_9MTw_4"
-OPENAI_API_KEY = "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"
+
+# Ключ берётся из настроек Render (Environment Variables)
+OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
 
 bot = telebot.TeleBot(TELEGRAM_TOKEN)
 
@@ -27,7 +29,7 @@ def get_ai_response(prompt, text):
         "Content-Type": "application/json"
     }
     data = {
-        "model": "gpt-4o-mini", 
+        "model": "gpt-6.1-terra",
         "messages": [
             {"role": "system", "content": prompt},
             {"role": "user", "content": text}
